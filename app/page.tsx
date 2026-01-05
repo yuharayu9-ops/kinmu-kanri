@@ -1,59 +1,51 @@
 "use client";
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Clock, UserCheck, LogIn, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock, LogIn, LogOut } from 'lucide-react';
 
 export default function AttendanceSystem() {
+  const [time, setTime] = useState("");
   const [status, setStatus] = useState("未打刻");
-  const now = new Date();
-  const timeString = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime(new Date().toLocaleTimeString('ja-JP'));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 flex flex-col items-center">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="bg-blue-600 text-white rounded-t-lg">
-          <CardTitle className="flex items-center gap-2">
-            <Clock size={24} />
-            ぱる勤務管理システム
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center mb-8">
-            <div className="text-5xl font-bold text-gray-800 mb-2">{timeString}</div>
-            <div className="text-lg text-gray-500 font-medium">2026年1月5日</div>
-          </div>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '20px', fontFamily: 'sans-serif' }}>
+      <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'white', borderRadius: '12px', shadow: '0 4px 6px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+        <div style={{ backgroundColor: '#2563eb', color: 'white', padding: '20px', textAlign: 'center' }}>
+          <h1 style={{ margin: 0, fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <Clock size={24} /> ぱる勤務管理システム
+          </h1>
+        </div>
+        
+        <div style={{ padding: '30px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#1f2937', marginBottom: '10px' }}>{time || "読み込み中..."}</div>
+          <div style={{ fontSize: '18px', color: '#6b7280', marginBottom: '30px' }}>2026年1月5日</div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <Button 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '30px' }}>
+            <button 
               onClick={() => setStatus("出勤中")}
-              className="h-24 flex flex-col gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-lg"
+              style={{ height: '100px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
             >
-              <LogIn size={32} />
-              出勤
-            </Button>
-            <Button 
+              <LogIn size={28} /> 出勤
+            </button>
+            <button 
               onClick={() => setStatus("退勤済み")}
-              className="h-24 flex flex-col gap-2 bg-rose-500 hover:bg-rose-600 text-white text-lg"
+              style={{ height: '100px', backgroundColor: '#f43f5e', color: 'white', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
             >
-              <LogOut size={32} />
-              退勤
-            </Button>
+              <LogOut size={28} /> 退勤
+            </button>
           </div>
 
-          <div className="bg-gray-100 p-4 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2 text-gray-600">
-              <UserCheck size={20} />
-              <span>現在のステータス:</span>
-            </div>
-            <span className={`font-bold ${status === '出勤中' ? 'text-emerald-600' : 'text-gray-500'}`}>
-              {status}
-            </span>
+          <div style={{ backgroundColor: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+            <p style={{ margin: 0, color: '#4b5563' }}>現在の状態: <strong>{status}</strong></p>
           </div>
-        </CardContent>
-      </Card>
-      
-      <p className="mt-8 text-sm text-gray-400">© 2026 ぱる勤務管理システム</p>
+        </div>
+      </div>
     </div>
   );
 }
