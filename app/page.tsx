@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
-// ↓↓↓ ここをご自身の新しいGAS URLに書き換えてください ↓↓↓
-const API_URL = "https://script.google.com/macros/s/AKfycbyP-NDYZJJ-wgqx8gD6csyOjCeYluKNTqwaqXlHeVuDrWnsw0lQOXzsCUuKO-oK8_DXPg/exec";
+// ↓↓↓ ご自身の新しいGAS URLに書き換えてください ↓↓↓
+const API_URL = "https://script.google.com/macros/s/AKfycbyUcxe-iznXDJufLiWuWYGw6WA_3O2NRB7Urkf1TSTFCry6SjeX6EjLzdvhlsCL4et8Pg/exec";
 
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
 
@@ -26,7 +26,6 @@ export default function PalAttendanceSystem() {
 
   const loadData = () => {
     fetch(`${API_URL}?action=getStaffList`).then(res => res.json()).then(setStaffs).catch(() => setStatusMessage("❌ 取得失敗"));
-    // roleをパラメータとして送ることで、自分が必要なリストだけ取得する
     if (role !== "staff") fetch(`${API_URL}?action=getApproveList&role=${role}`).then(res => res.json()).then(setApproveList);
   };
 
