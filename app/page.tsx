@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
+// ↓↓↓ ご自身のGAS URLに書き換えてください ↓↓↓
 const API_URL = "https://script.google.com/macros/s/AKfycbzAmTX7bT7_Bb0g94_BEks7hnJypWKFss0sEtHVdJqU9nQRkRJDxk2tnfQhyKxIU0IVeA/exec";
+
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
 
 export default function PalAttendanceSystem() {
@@ -16,7 +18,7 @@ export default function PalAttendanceSystem() {
   const [applyDate, setApplyDate] = useState("");
   const [applyDetail, setApplyDetail] = useState("");
 
-  // --- 追加分：超勤時間用 ---
+  // 超勤時間用
   const [startTime, setStartTime] = useState("18:00");
   const [endTime, setEndTime] = useState("19:00");
 
@@ -43,19 +45,19 @@ export default function PalAttendanceSystem() {
     setIsSending(true);
     setStatusMessage("⏳ 通信中...");
     
-    // 送信データの構築
+    // 送信データの構築（スプレッドシートへは「超勤」として送る）
     const postData = {
       action: extra.action || actionType,
       type: actionType,
       name: selectedStaff,
       role,
-      kigou: value,
+      kigou: value === "残業" ? "超勤" : value, // ここで変換
       location,
       date: applyDate,
       detail: applyDetail,
       month: adminMonth,
-      startTime: (actionType === "申請" && applyType === "超勤") ? startTime : null,
-      endTime: (actionType === "申請" && applyType === "超勤") ? endTime : null,
+      startTime: (value === "残業" || value === "超勤") ? startTime : null,
+      endTime: (value === "残業" || value === "超勤") ? endTime : null,
       ...extra
     };
 
@@ -118,12 +120,15 @@ export default function PalAttendanceSystem() {
               <option value="超勤">残業</option>
             </select>
 
-            {/* --- 超勤の時だけ表示される時間入力 --- */}
+            {/* --- 「超勤」を選択した時だけ表示されるように修正 --- */}
             {applyType === "超勤" && (
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center' }}>
-                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
-                <span style={{ fontSize: '30px' }}>〜</span>
-                <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{...labelStyle, fontSize:'20px'}}>残業時間：</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+                  <span style={{ fontSize: '30px' }}>〜</span>
+                  <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+                </div>
               </div>
             )}
 
