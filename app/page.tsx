@@ -8,8 +8,8 @@ const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789
 
 export default function PalAttendanceSystem() {
   const [role, setRole] = useState("staff");
-  const [staffs, setStaffs] = useState([]);
-  const [approveList, setApproveList] = useState([]);
+  const [staffs, setStaffs] = useState<string[]>([]);
+  const [approveList, setApproveList] = useState<any[]>([]);
   const [selectedStaff, setSelectedStaff] = useState("");
   const [location, setLocation] = useState("事務所");
   const [isSending, setIsSending] = useState(false);
@@ -18,7 +18,6 @@ export default function PalAttendanceSystem() {
   const [applyDate, setApplyDate] = useState("");
   const [applyDetail, setApplyDetail] = useState("");
 
-  // 超勤（残業）時間用の状態
   const [startTime, setStartTime] = useState("18:00");
   const [endTime, setEndTime] = useState("19:00");
 
@@ -27,25 +26,24 @@ export default function PalAttendanceSystem() {
   const [adminMonth, setAdminMonth] = useState(String(nextMonth.getFullYear()).substring(2) + ("0" + (nextMonth.getMonth() + 1)).slice(-2));
 
   const loadData = () => {
-    fetch(`${API_URL}?action=getStaffList`).then(res => res.json()).then(setStaffs).catch(() => setStatusMessage("❌ リスト取得失敗"));
+    fetch(`${API_URL}?action=getStaffList`).then(res => res.json()).then(setStaffs).catch(() => setStatusMessage("❌ 読み込み失敗"));
     if (role !== "staff") fetch(`${API_URL}?action=getApproveList`).then(res => res.json()).then(setApproveList);
   };
 
   useEffect(() => { loadData(); }, [role]);
 
-  const handleRoleChange = (e) => {
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     if (val === "staff") { setRole(val); return; }
     const pass = prompt(`${val}のパスワードを入力`);
-    if (pass === PASSWORDS[val]) setRole(val);
+    if (pass === (PASSWORDS as any)[val]) setRole(val);
     else { alert("パスワードが違います"); setRole("staff"); }
   };
 
-  const handleAction = async (actionType, value, extra = {}) => {
+  const handleAction = async (actionType: string, value: string, extra: any = {}) => {
     setIsSending(true);
     setStatusMessage("⏳ 通信中...");
     
-    // 送信データの構築（valueが「超勤」のときだけ時間を送る）
     const postData = {
       action: extra.action || actionType,
       type: actionType,
@@ -56,8 +54,8 @@ export default function PalAttendanceSystem() {
       date: applyDate,
       detail: applyDetail,
       month: adminMonth,
-      startTime: (value === "超勤") ? startTime : null,
-      endTime: (value === "超勤") ? endTime : null,
+      startTime: (value === "超勤" || applyType === "超勤") ? startTime : null,
+      endTime: (value === "超勤" || applyType === "超勤") ? endTime : null,
       ...extra
     };
 
@@ -78,12 +76,12 @@ export default function PalAttendanceSystem() {
     }
   };
 
-  const labelStyle = { fontSize: '26px', fontWeight: 'bold', display: 'block', marginBottom: '10px' };
+  const labelStyle = { fontSize: '26px', fontWeight: 'bold' as const, display: 'block', marginBottom: '10px' };
   const inputStyle = { width: '100%', padding: '20px', fontSize: '26px', borderRadius: '15px', border: '3px solid #ccc', marginBottom: '25px' };
-  const btnLarge = { padding: '28px', fontSize: '30px', color: 'white', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer' };
+  const btnLarge = { padding: '28px', fontSize: '30px', color: 'white', borderRadius: '20px', border: 'none', fontWeight: 'bold' as const, cursor: 'pointer' };
 
   return (
-    <div style={{ maxWidth: '650px', margin: '10px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '30px', boxShadow: '0 4px 40px rgba(0,0,0,0.2)', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '650px', margin: '10px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '30px', boxShadow: '0 4px 40px rgba(0,0,0,0.2)' }}>
       <header style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '36px' }}>ぱる 勤怠管理</h1>
         <div style={{ padding: '15px', backgroundColor: '#f0fdf4', color: '#166534', fontSize: '22px', fontWeight: 'bold', borderRadius: '10px' }}>{statusMessage}</div>
@@ -121,7 +119,6 @@ export default function PalAttendanceSystem() {
               <option value="超勤">残業</option>
             </select>
 
-            {/* 超勤(残業)の時だけ時間入力欄を出す */}
             {applyType === "超勤" && (
               <div style={{ marginBottom: '20px' }}>
                 <label style={{...labelStyle, fontSize:'22px'}}>残業時間：</label>
