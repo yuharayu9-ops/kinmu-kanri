@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ↓↓↓ ご自身の新しいGAS URLに書き換えてください ↓↓↓
-const API_URL = "https://script.google.com/macros/s/AKfycbyUcxe-iznXDJufLiWuWYGw6WA_3O2NRB7Urkf1TSTFCry6SjeX6EjLzdvhlsCL4et8Pg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxbzKr57ncdBdTsipOb4XZx5wz6vvH9B4TX15ySs6UQRc_I9J39ptEDtsP-VbbX8cG3tg/exec";
 
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
 
@@ -40,6 +40,16 @@ export default function PalAttendanceSystem() {
   };
 
   const handleAction = async (actionType: string, value: string, extra: any = {}) => {
+    // 【追加】申請時に名前または日付が空なら送信をブロックする
+    if (actionType === "申請") {
+      if (!selectedStaff) { alert("名前を選択してください"); return; }
+      if (!applyDate) { alert("日付を入力してください"); return; }
+    }
+    // 【追加】打刻時に名前がない場合もブロック
+    if (actionType === "打刻" && !selectedStaff) {
+      alert("名前を選択してください"); return;
+    }
+
     setIsSending(true);
     setStatusMessage("⏳ 通信中...");
     const postData = {
