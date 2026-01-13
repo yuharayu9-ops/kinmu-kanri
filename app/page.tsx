@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
-// ↓↓↓ ご自身のGAS URLに書き換えてください ↓↓↓
+// ↓↓↓ ここをご自身のGAS URLに書き換えてください ↓↓↓
 const API_URL = "https://script.google.com/macros/s/AKfycbzAmTX7bT7_Bb0g94_BEks7hnJypWKFss0sEtHVdJqU9nQRkRJDxk2tnfQhyKxIU0IVeA/exec";
 
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
@@ -18,7 +18,7 @@ export default function PalAttendanceSystem() {
   const [applyDate, setApplyDate] = useState("");
   const [applyDetail, setApplyDetail] = useState("");
 
-  // 超勤時間用
+  // 超勤（残業）時間用の状態
   const [startTime, setStartTime] = useState("18:00");
   const [endTime, setEndTime] = useState("19:00");
 
@@ -27,7 +27,7 @@ export default function PalAttendanceSystem() {
   const [adminMonth, setAdminMonth] = useState(String(nextMonth.getFullYear()).substring(2) + ("0" + (nextMonth.getMonth() + 1)).slice(-2));
 
   const loadData = () => {
-    fetch(`${API_URL}?action=getStaffList`).then(res => res.json()).then(setStaffs);
+    fetch(`${API_URL}?action=getStaffList`).then(res => res.json()).then(setStaffs).catch(() => setStatusMessage("❌ リスト取得失敗"));
     if (role !== "staff") fetch(`${API_URL}?action=getApproveList`).then(res => res.json()).then(setApproveList);
   };
 
@@ -45,19 +45,19 @@ export default function PalAttendanceSystem() {
     setIsSending(true);
     setStatusMessage("⏳ 通信中...");
     
-    // 送信データの構築（スプレッドシートへは「超勤」として送る）
+    // 送信データの構築（valueが「超勤」のときだけ時間を送る）
     const postData = {
       action: extra.action || actionType,
       type: actionType,
       name: selectedStaff,
       role,
-      kigou: value === "残業" ? "超勤" : value, // ここで変換
+      kigou: value, 
       location,
       date: applyDate,
       detail: applyDetail,
       month: adminMonth,
-      startTime: (value === "残業" || value === "超勤") ? startTime : null,
-      endTime: (value === "残業" || value === "超勤") ? endTime : null,
+      startTime: (value === "超勤") ? startTime : null,
+      endTime: (value === "超勤") ? endTime : null,
       ...extra
     };
 
@@ -83,7 +83,7 @@ export default function PalAttendanceSystem() {
   const btnLarge = { padding: '28px', fontSize: '30px', color: 'white', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer' };
 
   return (
-    <div style={{ maxWidth: '650px', margin: '10px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '30px', boxShadow: '0 4px 40px rgba(0,0,0,0.2)' }}>
+    <div style={{ maxWidth: '650px', margin: '10px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '30px', boxShadow: '0 4px 40px rgba(0,0,0,0.2)', fontFamily: 'sans-serif' }}>
       <header style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '36px' }}>ぱる 勤怠管理</h1>
         <div style={{ padding: '15px', backgroundColor: '#f0fdf4', color: '#166534', fontSize: '22px', fontWeight: 'bold', borderRadius: '10px' }}>{statusMessage}</div>
@@ -114,16 +114,17 @@ export default function PalAttendanceSystem() {
           </div>
           <div style={{ border: '4px solid #e5e7eb', padding: '20px', borderRadius: '25px' }}>
             <h3 style={{ fontSize: '28px', color: '#047857' }}>休暇・残業申請</h3>
+            
             <select value={applyType} onChange={e => setApplyType(e.target.value)} style={inputStyle}>
               <option value="有給">有給</option>
               <option value="勤務変更">勤務変更</option>
               <option value="超勤">残業</option>
             </select>
 
-            {/* --- 「超勤」を選択した時だけ表示されるように修正 --- */}
+            {/* 超勤(残業)の時だけ時間入力欄を出す */}
             {applyType === "超勤" && (
               <div style={{ marginBottom: '20px' }}>
-                <label style={{...labelStyle, fontSize:'20px'}}>残業時間：</label>
+                <label style={{...labelStyle, fontSize:'22px'}}>残業時間：</label>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
                   <span style={{ fontSize: '30px' }}>〜</span>
