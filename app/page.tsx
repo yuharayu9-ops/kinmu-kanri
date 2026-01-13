@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
-// ↓↓↓ ここをご自身のGAS URLに書き換えてください ↓↓↓
-const API_URL = "https://script.google.com/macros/s/AKfycbzAmTX7bT7_Bb0g94_BEks7hnJypWKFss0sEtHVdJqU9nQRkRJDxk2tnfQhyKxIU0IVeA/exec";
+// ↓↓↓ ここをご自身の新しいGAS URLに書き換えてください ↓↓↓
+const API_URL = "https://script.google.com/macros/s/AKfycbyP-NDYZJJ-wgqx8gD6csyOjCeYluKNTqwaqXlHeVuDrWnsw0lQOXzsCUuKO-oK8_DXPg/exec";
 
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
 
@@ -17,7 +17,6 @@ export default function PalAttendanceSystem() {
   const [applyType, setApplyType] = useState("有給");
   const [applyDate, setApplyDate] = useState("");
   const [applyDetail, setApplyDetail] = useState("");
-
   const [startTime, setStartTime] = useState("18:00");
   const [endTime, setEndTime] = useState("19:00");
 
@@ -26,8 +25,9 @@ export default function PalAttendanceSystem() {
   const [adminMonth, setAdminMonth] = useState(String(nextMonth.getFullYear()).substring(2) + ("0" + (nextMonth.getMonth() + 1)).slice(-2));
 
   const loadData = () => {
-    fetch(`${API_URL}?action=getStaffList`).then(res => res.json()).then(setStaffs).catch(() => setStatusMessage("❌ 読み込み失敗"));
-    if (role !== "staff") fetch(`${API_URL}?action=getApproveList`).then(res => res.json()).then(setApproveList);
+    fetch(`${API_URL}?action=getStaffList`).then(res => res.json()).then(setStaffs).catch(() => setStatusMessage("❌ 取得失敗"));
+    // roleをパラメータとして送ることで、自分が必要なリストだけ取得する
+    if (role !== "staff") fetch(`${API_URL}?action=getApproveList&role=${role}`).then(res => res.json()).then(setApproveList);
   };
 
   useEffect(() => { loadData(); }, [role]);
@@ -43,37 +43,24 @@ export default function PalAttendanceSystem() {
   const handleAction = async (actionType: string, value: string, extra: any = {}) => {
     setIsSending(true);
     setStatusMessage("⏳ 通信中...");
-    
     const postData = {
-      action: extra.action || actionType,
-      type: actionType,
-      name: selectedStaff,
-      role,
-      kigou: value, 
-      location,
-      date: applyDate,
-      detail: applyDetail,
-      month: adminMonth,
+      action: extra.action || actionType, type: actionType, name: selectedStaff, role,
+      kigou: value, location, date: applyDate, detail: applyDetail, month: adminMonth,
       startTime: (value === "超勤" || applyType === "超勤") ? startTime : null,
       endTime: (value === "超勤" || applyType === "超勤") ? endTime : null,
       ...extra
     };
-
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify(postData)
-      });
-      if (res.ok) { 
+      const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(postData) });
+      const resultText = await res.text();
+      if (resultText === "Success") { 
         setStatusMessage(`✅ ${value} 完了`); 
-        loadData(); 
-        setApplyDetail(""); 
+        loadData(); setApplyDetail(""); 
+      } else {
+        setStatusMessage(`⚠️ ${resultText}`);
       }
-    } catch (e) { 
-      setStatusMessage("❌ 通信エラー"); 
-    } finally { 
-      setIsSending(false); 
-    }
+    } catch (e) { setStatusMessage("❌ 通信エラー"); }
+    finally { setIsSending(false); }
   };
 
   const labelStyle = { fontSize: '26px', fontWeight: 'bold' as const, display: 'block', marginBottom: '10px' };
@@ -112,13 +99,11 @@ export default function PalAttendanceSystem() {
           </div>
           <div style={{ border: '4px solid #e5e7eb', padding: '20px', borderRadius: '25px' }}>
             <h3 style={{ fontSize: '28px', color: '#047857' }}>休暇・残業申請</h3>
-            
             <select value={applyType} onChange={e => setApplyType(e.target.value)} style={inputStyle}>
               <option value="有給">有給</option>
               <option value="勤務変更">勤務変更</option>
               <option value="超勤">残業</option>
             </select>
-
             {applyType === "超勤" && (
               <div style={{ marginBottom: '20px' }}>
                 <label style={{...labelStyle, fontSize:'22px'}}>残業時間：</label>
@@ -129,7 +114,6 @@ export default function PalAttendanceSystem() {
                 </div>
               </div>
             )}
-
             <input type="date" value={applyDate} onChange={e => setApplyDate(e.target.value)} style={inputStyle} />
             <input type="text" value={applyDetail} onChange={e => setApplyDetail(e.target.value)} placeholder="理由・内容" style={inputStyle} />
             <button onClick={() => handleAction("申請", applyType)} disabled={isSending} style={{ ...btnLarge, width: '100%', backgroundColor: '#047857' }}>申請送信</button>
