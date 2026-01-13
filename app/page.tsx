@@ -1,14 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
-const API_URL = "https://script.google.com/macros/s/AKfycbwQotnZVnBN54-aAgzhxWHtLsXu1BJPooDJLxLcA88WVHoPadWkzyZ5N2_L5aTVTu5cRQ/exec";
-
+const API_URL = "https://script.google.com/macros/s/AKfycbzAmTX7bT7_Bb0g94_BEks7hnJypWKFss0sEtHVdJqU9nQRkRJDxk2tnfQhyKxIU0IVeA/exec";
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
 
 export default function PalAttendanceSystem() {
   const [role, setRole] = useState("staff");
-  const [staffs, setStaffs] = useState<string[]>([]);
-  const [approveList, setApproveList] = useState<any[]>([]);
+  const [staffs, setStaffs] = useState([]);
+  const [approveList, setApproveList] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState("");
   const [location, setLocation] = useState("事務所");
   const [isSending, setIsSending] = useState(false);
@@ -16,6 +15,10 @@ export default function PalAttendanceSystem() {
   const [applyType, setApplyType] = useState("有給");
   const [applyDate, setApplyDate] = useState("");
   const [applyDetail, setApplyDetail] = useState("");
+
+  // --- 追加分：超勤時間用 ---
+  const [startTime, setStartTime] = useState("18:00");
+  const [endTime, setEndTime] = useState("19:00");
 
   const now = new Date();
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -28,30 +31,54 @@ export default function PalAttendanceSystem() {
 
   useEffect(() => { loadData(); }, [role]);
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleRoleChange = (e) => {
     const val = e.target.value;
     if (val === "staff") { setRole(val); return; }
     const pass = prompt(`${val}のパスワードを入力`);
-    if (pass === (PASSWORDS as any)[val]) setRole(val);
+    if (pass === PASSWORDS[val]) setRole(val);
     else { alert("パスワードが違います"); setRole("staff"); }
   };
 
-  const handleAction = async (actionType: string, value: string, extra: any = {}) => {
+  const handleAction = async (actionType, value, extra = {}) => {
     setIsSending(true);
     setStatusMessage("⏳ 通信中...");
+    
+    // 送信データの構築
+    const postData = {
+      action: extra.action || actionType,
+      type: actionType,
+      name: selectedStaff,
+      role,
+      kigou: value,
+      location,
+      date: applyDate,
+      detail: applyDetail,
+      month: adminMonth,
+      startTime: (actionType === "申請" && applyType === "超勤") ? startTime : null,
+      endTime: (actionType === "申請" && applyType === "超勤") ? endTime : null,
+      ...extra
+    };
+
     try {
       const res = await fetch(API_URL, {
         method: "POST",
-        body: JSON.stringify({ action: extra.action || actionType, type: actionType, name: selectedStaff, role, kigou: value, location, date: applyDate, detail: applyDetail, month: adminMonth, ...extra })
+        body: JSON.stringify(postData)
       });
-      if (res.ok) { setStatusMessage(`✅ ${value} 完了`); loadData(); setApplyDetail(""); }
-    } catch (e) { setStatusMessage("❌ 通信エラー"); }
-    finally { setIsSending(false); }
+      if (res.ok) { 
+        setStatusMessage(`✅ ${value} 完了`); 
+        loadData(); 
+        setApplyDetail(""); 
+      }
+    } catch (e) { 
+      setStatusMessage("❌ 通信エラー"); 
+    } finally { 
+      setIsSending(false); 
+    }
   };
 
-  const labelStyle = { fontSize: '26px', fontWeight: 'bold' as const, display: 'block', marginBottom: '10px' };
+  const labelStyle = { fontSize: '26px', fontWeight: 'bold', display: 'block', marginBottom: '10px' };
   const inputStyle = { width: '100%', padding: '20px', fontSize: '26px', borderRadius: '15px', border: '3px solid #ccc', marginBottom: '25px' };
-  const btnLarge = { padding: '28px', fontSize: '30px', color: 'white', borderRadius: '20px', border: 'none', fontWeight: 'bold' as const, cursor: 'pointer' };
+  const btnLarge = { padding: '28px', fontSize: '30px', color: 'white', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer' };
 
   return (
     <div style={{ maxWidth: '650px', margin: '10px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '30px', boxShadow: '0 4px 40px rgba(0,0,0,0.2)' }}>
@@ -85,7 +112,21 @@ export default function PalAttendanceSystem() {
           </div>
           <div style={{ border: '4px solid #e5e7eb', padding: '20px', borderRadius: '25px' }}>
             <h3 style={{ fontSize: '28px', color: '#047857' }}>休暇・残業申請</h3>
-            <select value={applyType} onChange={e => setApplyType(e.target.value)} style={inputStyle}><option value="有給">有給</option><option value="勤務変更">勤務変更</option><option value="超勤">残業</option></select>
+            <select value={applyType} onChange={e => setApplyType(e.target.value)} style={inputStyle}>
+              <option value="有給">有給</option>
+              <option value="勤務変更">勤務変更</option>
+              <option value="超勤">残業</option>
+            </select>
+
+            {/* --- 超勤の時だけ表示される時間入力 --- */}
+            {applyType === "超勤" && (
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center' }}>
+                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+                <span style={{ fontSize: '30px' }}>〜</span>
+                <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={{ ...inputStyle, marginBottom: 0 }} />
+              </div>
+            )}
+
             <input type="date" value={applyDate} onChange={e => setApplyDate(e.target.value)} style={inputStyle} />
             <input type="text" value={applyDetail} onChange={e => setApplyDetail(e.target.value)} placeholder="理由・内容" style={inputStyle} />
             <button onClick={() => handleAction("申請", applyType)} disabled={isSending} style={{ ...btnLarge, width: '100%', backgroundColor: '#047857' }}>申請送信</button>
@@ -103,9 +144,11 @@ export default function PalAttendanceSystem() {
           )}
           <h3 style={{ fontSize: '28px', borderBottom: '3px solid #ccc' }}>承認待ちリスト</h3>
           {approveList.length === 0 ? <p style={{fontSize:'22px'}}>なし</p> : approveList.map(item => (
-            <div key={item.row} style={{ border: '2px solid #ccc', padding: '15px', borderRadius: '15px', marginBottom: '10px', textAlign: 'left' }}>
-              <p style={{ fontSize: '22px' }}><b>{item.name}</b>（{item.type}）{new Date(item.date).toLocaleDateString()}</p>
-              <button onClick={() => handleAction("approve", "承認", { action: "approve", row: item.row })} style={{ ...btnLarge, width: '100%', fontSize: '22px', backgroundColor: '#059669', padding: '15px' }}>
+            <div key={item.sheetName + item.row} style={{ border: '2px solid #ccc', padding: '15px', borderRadius: '15px', marginBottom: '10px', textAlign: 'left' }}>
+              <p style={{ fontSize: '22px' }}><b>{item.name}</b>（{item.type}）</p>
+              <p style={{ fontSize: '18px', color: '#666' }}>日付: {new Date(item.date).toLocaleDateString()}</p>
+              <p style={{ fontSize: '18px', marginBottom: '10px' }}>内容: {item.detail}</p>
+              <button onClick={() => handleAction("approve", "承認", { action: "approve", row: item.row, sheetName: item.sheetName })} style={{ ...btnLarge, width: '100%', fontSize: '22px', backgroundColor: '#059669', padding: '15px' }}>
                 {role === "shunin" ? "主任承認" : role === "kachou" ? "課長承認" : "所長承認"} 実行
               </button>
             </div>
