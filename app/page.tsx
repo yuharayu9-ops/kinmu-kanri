@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ↓↓↓ ご自身の新しいGAS URLに書き換えてください ↓↓↓
-const API_URL = "https://script.google.com/macros/s/AKfycbxbzKr57ncdBdTsipOb4XZx5wz6vvH9B4TX15ySs6UQRc_I9J39ptEDtsP-VbbX8cG3tg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwdRDfcUJUeSr773ElH-pHpHqNTtqDkS-atcbCpFx_KqMazCW81QDg-iRcqRdJWI6x1gw/exec";
 
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
 
@@ -40,12 +40,10 @@ export default function PalAttendanceSystem() {
   };
 
   const handleAction = async (actionType: string, value: string, extra: any = {}) => {
-    // 【追加】申請時に名前または日付が空なら送信をブロックする
     if (actionType === "申請") {
       if (!selectedStaff) { alert("名前を選択してください"); return; }
       if (!applyDate) { alert("日付を入力してください"); return; }
     }
-    // 【追加】打刻時に名前がない場合もブロック
     if (actionType === "打刻" && !selectedStaff) {
       alert("名前を選択してください"); return;
     }
@@ -110,6 +108,7 @@ export default function PalAttendanceSystem() {
             <h3 style={{ fontSize: '28px', color: '#047857' }}>休暇・残業申請</h3>
             <select value={applyType} onChange={e => setApplyType(e.target.value)} style={inputStyle}>
               <option value="有給">有給</option>
+              <option value="代休">代休</option>
               <option value="勤務変更">勤務変更</option>
               <option value="超勤">残業</option>
             </select>
