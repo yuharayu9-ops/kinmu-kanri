@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ↓↓↓ ご自身の新しいGAS URLに書き換えてください ↓↓↓
-const API_URL = "https://script.google.com/macros/s/AKfycbwdRDfcUJUeSr773ElH-pHpHqNTtqDkS-atcbCpFx_KqMazCW81QDg-iRcqRdJWI6x1gw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxh_CnkBQO5neF184tXy1DIOoUJUvF5ERy8vRQbUn7kk8sD7hVnIEbYybtCZVlD0E6rbw/exec";
 
 const PASSWORDS = { shunin: "shunin123", kachou: "kachou456", shocho: "shocho789" };
 
